@@ -1,60 +1,100 @@
-import os
+# from PIL import Image, ImageOps
+# import numpy as np
+#
+#
+# def shear_image(image_path, shear_horizontal_angle=0, shear_vertical_angle=0):
+#     """
+#     Shears the image horizontally and/or vertically based on the provided angles.
+#
+#     Args:
+#     image_path (str): Path to the input image file.
+#     shear_horizontal_angle (float): Horizontal shear angle in degrees. Default is 0.
+#     shear_vertical_angle (float): Vertical shear angle in degrees. Default is 0.
+#
+#     Returns:
+#     PIL.Image.Image: Skewed image.
+#     """
+#     # Open the image
+#     image = Image.open(image_path)
+#
+#     # Convert angles to radians
+#     shear_horizontal_radians = np.radians(shear_horizontal_angle)
+#     shear_vertical_radians = np.radians(shear_vertical_angle)
+#
+#     # Calculate new image dimensions
+#     width, height = image.size
+#     new_width = int(width + abs(height * np.tan(shear_horizontal_radians)))
+#     new_height = int(height + abs(width * np.tan(shear_vertical_radians)))
+#
+#     # Create a new blank canvas with black background
+#     new_image = Image.new("RGB", (new_width, new_height), color="black")
+#
+#     # Calculate offsets based on shear angles
+#     offset_horizontal = int(abs(height * np.tan(shear_horizontal_radians)))
+#     offset_vertical = int(abs(width * np.tan(shear_vertical_radians)))
+#
+#     # Paste the original image onto the new canvas with offset
+#     if shear_horizontal_angle >= 0:
+#         new_image.paste(image, (offset_horizontal, 0))
+#     else:
+#         new_image.paste(image, (0, 0))
+#
+#     if shear_vertical_angle >= 0:
+#         new_image.paste(image, (0, offset_vertical))
+#     else:
+#         new_image.paste(image, (0, 0))
+#
+#     return new_image
+#
+#
+# # Example usage:
+# input_image_path = 'images/sign_1.jpg'
+# sheared_image = shear_image(input_image_path, shear_horizontal_angle=30, shear_vertical_angle=0)
+#
+# # Display the sheared image
+# sheared_image.show()
+
+
+from PIL import Image
 import numpy as np
-from scipy import ndimage
-from skimage import measure
 
 
-def mask_to_segmentation(mask):
-    # Label connected components in the mask
-    labeled_mask, num_labels = ndimage.label(mask)
+def add_padding(image, u=0, p=0, l=0, r=0):
+    """
+    Add black padding to the input image.
 
-    # Extract segmentation contours
-    segmentation_contours = measure.find_contours(mask, 0.5)
+    Args:
+    image (PIL.Image.Image): Input image.
+    u (int): Padding pixels to add to the top (upper). Default is 0.
+    p (int): Padding pixels to add to the bottom (lower). Default is 0.
+    l (int): Padding pixels to add to the left. Default is 0.
+    r (int): Padding pixels to add to the right. Default is 0.
 
-    return labeled_mask, segmentation_contours
+    Returns:
+    PIL.Image.Image: Image with added black padding.
+    """
+    # Get input image dimensions
+    width, height = image.size
 
+    # Calculate new dimensions with padding
+    new_width = width + l + r
+    new_height = height + u + p
 
-def convert_to_yolo_format(image_size, contour):
-    # Convert contour to YOLO format
-    yolo_format = [(contour[:, 1] / image_size[1]).tolist(), (contour[:, 0] / image_size[0]).tolist()]
-    return yolo_format
+    # Create a new blank image with the new dimensions and fill it with black
+    padded_image = Image.new('RGB', (new_width, new_height), color='black')
 
+    # Paste the original image onto the padded image with the specified offsets
+    padded_image.paste(image, (l, u))
 
-def save_segmentation_as_text(segmentation_contours, image_size, filename):
-    with open(filename, 'w') as file:
-        for contour in segmentation_contours:
-            yolo_format = convert_to_yolo_format(image_size, contour)
-            file.write("0 " + " ".join(str(coord) for coord in yolo_format[0]) + " " + " ".join(
-                str(coord) for coord in yolo_format[1]) + "\n")
-
-
-def process_images_and_masks(parent_directory, output_directory):
-    image_directory = os.path.join(parent_directory, 'images')
-    mask_directory = os.path.join(parent_directory, 'masks')
-
-    # Create output directory if it doesn't exist
-    os.makedirs(output_directory, exist_ok=True)
-
-    for image_filename in os.listdir(image_directory):
-        if image_filename.endswith(('.png', '.jpg', '.jpeg', '.gif')):
-            image_path = os.path.join(image_directory, image_filename)
-            mask_path = os.path.join(mask_directory, image_filename)
-
-            # Load image and mask
-            image = imread(image_path)
-            mask = imread(mask_path)
-
-            # Convert mask to segmentation
-            labeled_mask, segmentation_contours = mask_to_segmentation(mask)
-
-            # Save segmentation as text file in YOLO format
-            segmentation_filename = os.path.splitext(image_filename)[0] + '.txt'
-            segmentation_filepath = os.path.join(output_directory, segmentation_filename)
-            save_segmentation_as_text(segmentation_contours, image.shape[:2], segmentation_filepath)
+    return padded_image
 
 
 # Example usage:
-parent_directory = "/path/to/parent_directory"
-output_directory = "/path/to/output_directory"
+input_image_path = 'images/image 1.jpg'
+input_image = Image.open(input_image_path)
 
-process_images_and_masks(parent_directory, output_directory)
+# Add padding of 20 pixels to the top and bottom, and 10 pixels to the left and right
+padded_image = add_padding(input_image, u=0, p=0, l=0, r=400)
+
+# Display the padded image
+padded_image.show()

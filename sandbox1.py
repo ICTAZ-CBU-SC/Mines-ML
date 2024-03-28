@@ -1,100 +1,186 @@
-# from PIL import Image, ImageOps
+# # import cv2
+# # import numpy as np
+# #
+# #
+# # def warp_perspective(image, vertical_warp, horizontal_warp):
+# #     src_height, src_width = image.shape[:2]
+# #
+# #     dst_top_left = np.float32([0, 0])
+# #     dst_top_right = np.float32([0, src_width])
+# #     dst_bottom_left = np.float32([0, src_height])
+# #     dst_bottom_right = np.float32([src_height, src_width])
+# #
+# #     mid_y = src_height // 2
+# #     mid_x = src_width // 2
+# #     if vertical_warp > 0:
+# #         dst_top_right[1] = mid_y - mid_y * vertical_warp
+# #         dst_bottom_right[1] = mid_y + mid_y * vertical_warp
+# #     else:
+# #         dst_top_left[1] = mid_y - mid_y * vertical_warp
+# #         dst_bottom_left[1] = mid_y + mid_y * vertical_warp
+# #
+# #     if horizontal_warp > 0:
+# #         dst_top_right[0] = mid_x + mid_x * horizontal_warp
+# #         dst_top_left[0] = mid_x - mid_x * horizontal_warp
+# #     else:
+# #         dst_bottom_left[0] = mid_x - mid_x * horizontal_warp
+# #         dst_bottom_right[0] = mid_x + mid_x * horizontal_warp
+# #
+# #     # Define corner points (adjust based on your image)
+# #     src_top_left = np.float32([100, 50])  # Adjust these values as needed
+# #     src_top_right = np.float32([300, 70])
+# #     src_bottom_left = np.float32([50, 250])
+# #     src_bottom_right = np.float32([400, 300])
+# #
+# #     # # Define destination points (adjust for desired warping)
+# #     # dst_top_left = np.float32([100, 20])  # Adjust Y position if needed
+# #     # dst_top_right = np.float32([500, 20])  # Stretch right side more by increasing X
+# #     # dst_bottom_left = np.float32([50, 350])  # Stretch left side more by decreasing X slightly
+# #     # dst_bottom_right = np.float32([550, 350])  # Increase X to stretch further
+# #
+# #     # Calculate perspective transform
+# #     src_pts = np.float32([src_top_left, src_top_right, src_bottom_left, src_bottom_right])
+# #     dst_pts = np.float32([dst_top_left, dst_top_right, dst_bottom_left, dst_bottom_right])
+# #     M = cv2.getPerspectiveTransform(src_pts, dst_pts)
+# #
+# #     # Warp the image
+# #     warped_image = cv2.warpPerspective(image, M, dsize=(image.shape[1], image.shape[1]))
+# #
+# #     # Display or save the warped image
+# #     cv2.imshow("Original Image", image)
+# #     cv2.imshow("Warped Image", warped_image)
+# #     cv2.waitKey(0)
+# #     cv2.destroyAllWindows()
+# #
+# #     return warped_image
+# #
+# #
+# # # Replace with your image path
+# # image = cv2.imread("images/image 2.jpg")
+# # warped = warp_perspective(image, 1, 1)
+# # # Optionally save the warped image
+# # # cv2.imsave("warped_asymmetric.jpg", warped_image)
+# # # cv2.waitKey(0)
+#
+#
+# import cv2
 # import numpy as np
 #
+# def warp_perspective(image, vertical_warp, horizontal_warp):
+#     height, width = image.shape[:2]
 #
-# def shear_image(image_path, shear_horizontal_angle=0, shear_vertical_angle=0):
-#     """
-#     Shears the image horizontally and/or vertically based on the provided angles.
+#     # Define destination points based on warping
+#     mid_y = height // 2
+#     mid_x = width // 2
+#     dst_top_left = np.float32([0, 0])
+#     dst_top_right = np.float32([0, width])
+#     dst_bottom_left = np.float32([0, height])
+#     dst_bottom_right = np.float32([height, width])
 #
-#     Args:
-#     image_path (str): Path to the input image file.
-#     shear_horizontal_angle (float): Horizontal shear angle in degrees. Default is 0.
-#     shear_vertical_angle (float): Vertical shear angle in degrees. Default is 0.
-#
-#     Returns:
-#     PIL.Image.Image: Skewed image.
-#     """
-#     # Open the image
-#     image = Image.open(image_path)
-#
-#     # Convert angles to radians
-#     shear_horizontal_radians = np.radians(shear_horizontal_angle)
-#     shear_vertical_radians = np.radians(shear_vertical_angle)
-#
-#     # Calculate new image dimensions
-#     width, height = image.size
-#     new_width = int(width + abs(height * np.tan(shear_horizontal_radians)))
-#     new_height = int(height + abs(width * np.tan(shear_vertical_radians)))
-#
-#     # Create a new blank canvas with black background
-#     new_image = Image.new("RGB", (new_width, new_height), color="black")
-#
-#     # Calculate offsets based on shear angles
-#     offset_horizontal = int(abs(height * np.tan(shear_horizontal_radians)))
-#     offset_vertical = int(abs(width * np.tan(shear_vertical_radians)))
-#
-#     # Paste the original image onto the new canvas with offset
-#     if shear_horizontal_angle >= 0:
-#         new_image.paste(image, (offset_horizontal, 0))
+#     if vertical_warp > 0:
+#         dst_top_right[1] = mid_y - mid_y * vertical_warp
+#         dst_bottom_right[1] = mid_y + mid_y * vertical_warp
 #     else:
-#         new_image.paste(image, (0, 0))
+#         dst_top_left[1] = mid_y - mid_y * vertical_warp
+#         dst_bottom_left[1] = mid_y + mid_y * vertical_warp
 #
-#     if shear_vertical_angle >= 0:
-#         new_image.paste(image, (0, offset_vertical))
+#     if horizontal_warp > 0:
+#         dst_top_right[0] = mid_x + mid_x * horizontal_warp
+#         dst_top_left[0] = mid_x - mid_x * horizontal_warp
 #     else:
-#         new_image.paste(image, (0, 0))
+#         dst_bottom_left[0] = mid_x - mid_x * horizontal_warp
+#         dst_bottom_right[0] = mid_x + mid_x * horizontal_warp
 #
-#     return new_image
+#     # Define source points (corners of the original image)
+#     # src_pts = np.float32([[100, 50], [300, 70], [50, 250], [400, 300]])
+#     src_pts = np.float32([[0, height], [width, ], []])
 #
+#     # Define destination points (adjusted for desired warping)
+#     dst_pts = np.float32([dst_top_left, dst_top_right, dst_bottom_left, dst_bottom_right])
 #
-# # Example usage:
-# input_image_path = 'images/sign_1.jpg'
-# sheared_image = shear_image(input_image_path, shear_horizontal_angle=30, shear_vertical_angle=0)
+#     # Calculate perspective transform matrix
+#     M = cv2.getPerspectiveTransform(src_pts, dst_pts)
 #
-# # Display the sheared image
-# sheared_image.show()
+#     # Warp the image
+#     warped_image = cv2.warpPerspective(image, M, (width, height))
+#
+#     # Display or save the warped image
+#     cv2.imshow("Original Image", image)
+#     cv2.imshow("Warped Image", warped_image)
+#     cv2.waitKey(0)
+#     cv2.destroyAllWindows()
+#
+#     return warped_image
+#
+# # Replace with your image path
+# image = cv2.imread("images/image 2.jpg")
+# warped = warp_perspective(image, 1, 1)
+# # Optionally save the warped image
+# # cv2.imwrite("warped_asymmetric.jpg", warped)
+# # cv2.waitKey(0)
 
 
-from PIL import Image
+import cv2
 import numpy as np
 
 
-def add_padding(image, u=0, p=0, l=0, r=0):
-    """
-    Add black padding to the input image.
+def warp_perspective(image, vertical_warp, horizontal_warp):
+    height, width = image.shape[:2]
 
-    Args:
-    image (PIL.Image.Image): Input image.
-    u (int): Padding pixels to add to the top (upper). Default is 0.
-    p (int): Padding pixels to add to the bottom (lower). Default is 0.
-    l (int): Padding pixels to add to the left. Default is 0.
-    r (int): Padding pixels to add to the right. Default is 0.
+    # Define source points (corners of the input image)
+    src_top_left = [0, 0]
+    src_top_right = [width, 0]
+    src_bottom_right = [width, height]
+    src_bottom_left = [0, height]
 
-    Returns:
-    PIL.Image.Image: Image with added black padding.
-    """
-    # Get input image dimensions
-    width, height = image.size
+    src_pts = np.float32([src_top_left, src_top_right, src_bottom_right, src_bottom_left])
 
-    # Calculate new dimensions with padding
-    new_width = width + l + r
-    new_height = height + u + p
+    # Define destination points based on warping
+    mid_y = height // 2
+    mid_x = width // 2
+    dst_top_left = np.float32([0, 0])
+    dst_top_right = np.float32([width, 0])
+    dst_bottom_right = np.float32([width, height])
+    dst_bottom_left = np.float32([0, height])
 
-    # Create a new blank image with the new dimensions and fill it with black
-    padded_image = Image.new('RGB', (new_width, new_height), color='black')
+    if vertical_warp > 0:
+        dst_top_right[1] = mid_y - mid_y * vertical_warp
+        dst_bottom_right[1] = mid_y + mid_y * vertical_warp
+    else:
+        dst_top_left[1] = mid_y - abs(mid_y * vertical_warp)
+        dst_bottom_left[1] = mid_y + abs(mid_y * vertical_warp)
 
-    # Paste the original image onto the padded image with the specified offsets
-    padded_image.paste(image, (l, u))
+    if horizontal_warp > 0:
+        dst_top_right[0] = mid_x + mid_x * horizontal_warp
+        dst_top_left[0] = mid_x - mid_x * horizontal_warp
+    else:
+        dst_bottom_right[0] = mid_x + mid_x * abs(horizontal_warp)
+        dst_bottom_left[0] = mid_x - mid_x * abs(horizontal_warp)
 
-    return padded_image
+    print(src_top_left, src_top_right, src_bottom_right, src_bottom_left)
+    print(dst_top_left, dst_top_right, dst_bottom_right, dst_bottom_left)
+
+    # Define destination points (adjusted for desired warping)
+    dst_pts = np.float32([dst_top_left, dst_top_right, dst_bottom_right, dst_bottom_left])
+
+    # Calculate perspective transform matrix
+    M = cv2.getPerspectiveTransform(src_pts, dst_pts)
+
+    # Warp the image
+    warped_image = cv2.warpPerspective(image, M, (width, height))
+
+    # Display or save the warped image
+    cv2.imshow("Original Image", image)
+    cv2.imshow("Warped Image", warped_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    return warped_image
 
 
-# Example usage:
-input_image_path = 'images/image 1.jpg'
-input_image = Image.open(input_image_path)
-
-# Add padding of 20 pixels to the top and bottom, and 10 pixels to the left and right
-padded_image = add_padding(input_image, u=0, p=0, l=0, r=400)
-
-# Display the padded image
-padded_image.show()
+# Replace with your image path
+image = cv2.imread("images/image 2.jpg")
+warped = warp_perspective(image, -0.5, 1)
+# Optionally save the warped image
+# cv2.imwrite("warped_asymmetric.jpg", warped)
+# cv2.waitKey(0)

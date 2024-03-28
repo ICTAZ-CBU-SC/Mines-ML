@@ -2,7 +2,7 @@ from PIL import Image
 import numpy as np
 
 
-def add_padding(image, u=0, d=0, l=0, r=0):
+def add_padding(image, up=0, down=0, left=0, right=0):
     """
     Add black padding to the input image.
 
@@ -20,14 +20,14 @@ def add_padding(image, u=0, d=0, l=0, r=0):
     width, height = image.size
 
     # Calculate new dimensions with padding
-    new_width = width + l + r
-    new_height = height + u + d
+    new_width = width + left + right
+    new_height = height + up + down
 
     # Create a new blank image with the new dimensions and fill it with black
     padded_image = Image.new('RGB', (new_width, new_height), color='black')
 
     # Paste the original image onto the padded image with the specified offsets
-    padded_image.paste(image, (l, u))
+    padded_image.paste(image, (left, up))
 
     return padded_image
 
@@ -68,9 +68,7 @@ def shear_image(image_path, shear_horizontal_angle=0, shear_vertical_angle=0):
     else:
         left_pad = h_pad
 
-    print(up_pad, down_pad, left_pad, right_pad)
-
-    image = add_padding(image, u=up_pad, d=down_pad, l=left_pad, r=right_pad)
+    image = add_padding(image, up=up_pad, down=down_pad, left=left_pad, right=right_pad)
 
     new_width, new_height = width + h_pad, height + v_pad
 

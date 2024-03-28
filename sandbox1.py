@@ -1,71 +1,87 @@
-import cv2
+from PIL import Image, ImageDraw
 import numpy as np
-from PIL import Image, ImageDraw, ImageOps
+import cv2
 
 
-def paste_segmentation_onto_transparent(segmentation_image_path, transparent_image_path, segmentation_points):
+def add_padding(image, up=0, down=0, left=0, right=0):
     """
-    Crops out an image segmentation based on provided points and pastes it onto a transparent image.
+    Add transparent padding to the input image.
 
     Args:
-        segmentation_image_path (str): Path to the segmentation image.
-        transparent_image_path (str): Path to the transparent image.
-        segmentation_points (list): A list of (x, y) coordinates representing the points outlining the segmentation.
+    image (PIL.Image.Image): Input image.
+    up (int): Padding pixels to add to the top (upper). Default is 0.
+    down (int): Padding pixels to add to the bottom (lower). Default is 0.
+    left (int): Padding pixels to add to the left. Default is 0.
+    right (int): Padding pixels to add to the right. Default is 0.
 
     Returns:
-        None
+    PIL.Image.Image: Image with added transparent padding.
     """
+    # Get input image dimensions
+    width, height = image.size
 
-    try:
-        segmentation_image = Image.open(segmentation_image_path)
-        transparent_image = Image.open(transparent_image_path)
+    # Calculate new dimensions with padding
+    new_width = width + left + right
+    new_height = height + up + down
 
-        # Check compatibility
-        if segmentation_image.mode != transparent_image.mode:
-            raise ValueError("Image modes are not compatible.")
+    # Create a new blank image with the new dimensions and fill it with transparent pixels
+    padded_image = Image.new('RGBA', (new_width, new_height), color=(0, 0, 0, 0))
 
-        # Get bounding box from segmentation points
-        min_x, min_y = min(segmentation_points, key=lambda p: p[0])[0], min(segmentation_points, key=lambda p: p[1])[1]
-        max_x, max_y = max(segmentation_points, key=lambda p: p[0])[0], max(segmentation_points, key=lambda p: p[1])[1]
-        bbox = (min_x, min_y, max_x, max_y)
+    # Paste the original image onto the padded image with the specified offsets
+    padded_image.paste(image, (left, up))
 
-        # Crop segmentation image
-        cropped_segmentation = segmentation_image.crop(bbox).convert("RGBA")
-
-        # Paste onto transparent image
-        transparent_image.paste(cropped_segmentation, mask=cropped_segmentation)
-
-        # Save final image
-        transparent_image.save("final_image.png", "PNG")
-        transparent_image.show()
-
-    except FileNotFoundError as e:
-        print(f"Error: File not found: {e}")
-    except ValueError as e:
-        print(e)
+    return padded_image
 
 
-def extract_masked_parts(original_image_path, mask_image_path):
-    # Read the original image and the mask image
-    original_image = cv2.imread(original_image_path)
-    mask_image = cv2.imread(mask_image_path, cv2.IMREAD_GRAYSCALE)
+def shear_image(warped_image_pil, shear_horizontal_angle=0, shear_vertical_angle=0):
+    """
+    Shears the image horizontally and/or vertically based on the provided angles.
 
-    # Ensure that the mask image is binary (0 or 255)
-    _, mask_image = cv2.threshold(mask_image, 128, 255, cv2.THRESH_BINARY)
+    Args:
+    image_path (str): Path to the input image file.
+    shear_horizontal_angle (float): Horizontal shear angle in degrees. Default is 0.
+    shear_vertical_angle (float): Vertical shear angle in degrees. Default is 0.
 
-    # Invert the mask (black becomes white and vice versa) to create a mask for the masked parts
-    inverted_mask = cv2.bitwise_not(mask_image)
+    Returns:
+    PIL.Image.Image: Skewed image.
+    """
+    # # Open the image
+    # image_pil = Image.open(image_path)
+    # Calculate new image dimensions
+    width, height = warped_image_pil.size
 
-    # Create an alpha channel for the masked parts
-    alpha_channel = np.zeros_like(inverted_mask)
+    # Convert angles to radians
+    shear_horizontal_radians = np.radians(shear_horizontal_angle)
+    shear_vertical_radians = np.radians(shear_vertical_angle)
 
-    # Stack the original image with the alpha channel to create an RGBA image
-    original_image_with_alpha = cv2.merge([original_image, alpha_channel])
+    up_pad, down_pad, left_pad, right_pad = 0, 0, 0, 0
 
-    # Set the alpha channel values for the masked parts to 0 (fully transparent)
-    original_image_with_alpha[:, :, 3] = inverted_mask
+    h_pad = abs(int(height * np.tan(shear_horizontal_radians)))
+    v_pad = abs(int(width * np.tan(shear_vertical_radians)))
 
-    return original_image_with_alpha
+    if shear_vertical_angle > 0:
+        up_pad = v_pad
+    else:
+        down_pad = v_pad
+
+    if shear_horizontal_angle < 0:
+        right_pad = h_pad
+    else:
+        left_pad = h_pad
+
+    warped_image_pil = add_padding(warped_image_pil, up=up_pad, down=down_pad, left=left_pad, right=right_pad)
+
+    new_width, new_height = width + h_pad, height + v_pad
+
+    # Define the transformation matrix
+    shear_matrix = (1, np.tan(shear_horizontal_radians), 0,
+                    np.tan(shear_vertical_radians), 1, 0)
+
+    # Shear the image
+    skewed_image = warped_image_pil.transform((new_width, new_height), Image.AFFINE, shear_matrix,
+                                              resample=Image.BICUBIC)
+
+    return skewed_image
 
 
 def warp_perspective(_image, vertical_warp, horizontal_warp):
@@ -101,6 +117,9 @@ def warp_perspective(_image, vertical_warp, horizontal_warp):
         dst_bottom_right[0] = mid_x + mid_x * abs(horizontal_warp)
         dst_bottom_left[0] = mid_x - mid_x * abs(horizontal_warp)
 
+    # print(src_top_left, src_top_right, src_bottom_right, src_bottom_left)
+    # print(dst_top_left, dst_top_right, dst_bottom_right, dst_bottom_left)
+
     # Define destination points (adjusted for desired warping)
     dst_pts = np.float32([dst_top_left, dst_top_right, dst_bottom_right, dst_bottom_left])
 
@@ -108,51 +127,144 @@ def warp_perspective(_image, vertical_warp, horizontal_warp):
     M = cv2.getPerspectiveTransform(src_pts, dst_pts)
 
     # Warp the image
-    warped_image = cv2.warpPerspective(_image, M, (width, height))
-    warped_pil = Image.fromarray(cv2.cvtColor(warped_image, cv2.COLOR_BGR2RGB))
-    warped_pil = warped_pil.convert("RGBA")
+    _warped_image = cv2.warpPerspective(_image, M, (width, height))
 
-    # Create a new image with a transparent background
-    transparent_background = Image.new("RGBA", warped_pil.size, (0, 0, 0, 0))
+    # Display or save the warped image
+    # cv2.imshow("Original Image", _image)
+    # cv2.imshow("Warped Image", warped_image)
+    # cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
-    # Draw the segmentation points onto the transparent background
-    draw = ImageDraw.Draw(transparent_background)
-    draw.polygon(dst_pts, fill=(255, 255, 255, 255))  # Fills the region with white color and full opacity
-    warped_image = cv2.cvtColor(warped_image, cv2.COLOR_BGR2BGRA)
+    _warped_image = Image.fromarray(_warped_image)
+    print(_warped_image.size)
+    draw = ImageDraw.Draw(_warped_image, "RGBA")
+    for i, start_point in enumerate(dst_pts.tolist()):
+        if i == len(dst_pts.tolist()) - 1:
+            end_point = dst_pts.tolist()[0]
+        else:
+            end_point = dst_pts.tolist()[i + 1]
+        print(start_point, end_point)
+        # draw.line()
+        _warped_image = draw_line(_warped_image, start_point, end_point)
 
-    transparent_arr = np.array(transparent_background)
-    h, w = transparent_arr.shape[:2]
-    for y in range(height):
-        for x in range(width):
-            if transparent_arr[y, x, 3] == 255:
-                transparent_arr[y, x] = warped_image[y, x]
-    cv2.imshow("123456", transparent_arr)
-    cv2.imwrite("test_image.png", transparent_arr)
-    cv2.waitKey(0)
-    return Image.fromarray(transparent_arr)
-
-
-def crop_and_paste(image_path, segmentation_points, output_path):
-    # Open the original image
-    original_image = Image.open(image_path)
-
-    # Create a new image with a transparent background
-    transparent_background = Image.new("RGBA", original_image.size, (255, 255, 255, 0))
-
-    # Draw the segmentation points onto the transparent background
-    draw = ImageDraw.Draw(transparent_background)
-    draw.polygon(segmentation_points, fill=(255, 255, 255, 255))  # Fills the region with white color and full opacity
-
-    # Extract the object from the original image using the drawn segmentation points
-    object_image = Image.alpha_composite(original_image.convert("RGBA"), transparent_background)
-
-    # Save the result to the output path
-    object_image.save(output_path)
+    return _warped_image
 
 
-image = cv2.imread("images/image 2.jpg")
-warped = warp_perspective(image, -0.5, 1)
-warped.show()
-# Optionally save the warped image
-# cv2.imwrite("warped_asymmetric.jpg", warped)
-# cv2.waitKey(0)
+def draw_line(image, start_point, end_point, line_color=(255, 0, 0), thickness=6):
+    """
+    Draw a line on the image.
+
+    Args:
+    image (PIL.Image.Image): Input image.
+    start_point (tuple): Tuple containing the coordinates of the start point (x, y).
+    end_point (tuple): Tuple containing the coordinates of the end point (x, y).
+    line_color (tuple): Tuple containing the RGB values of the line color. Default is red (255, 0, 0).
+    thickness (int): Thickness of the line. Default is 1.
+
+    Returns:
+    PIL.Image.Image: Image with the drawn line.
+    """
+    # Create a draw object
+    draw = ImageDraw.Draw(image)
+
+    # Draw the line on the image
+    draw.line([*start_point, *end_point], fill=line_color, width=thickness)
+
+    return image
+
+
+def shear_and_warp(image_path, shear_horizontal_angle, shear_vertical_angle, vertical_warp, horizontal_warp):
+    image_arr = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
+    height, width = image_arr.shape[:2]
+
+    # Define source points (corners of the input image)
+    src_top_left = [0, 0]
+    src_top_right = [width, 0]
+    src_bottom_right = [width, height]
+    src_bottom_left = [0, height]
+
+    src_pts = np.float32([src_top_left, src_top_right, src_bottom_right, src_bottom_left])
+
+    # Define destination points based on warping
+    mid_y = height // 2
+    mid_x = width // 2
+    dst_top_left = np.float32([0, 0])
+    dst_top_right = np.float32([width, 0])
+    dst_bottom_right = np.float32([width, height])
+    dst_bottom_left = np.float32([0, height])
+
+    if vertical_warp > 0:
+        dst_top_right[1] = mid_y - mid_y * vertical_warp
+        dst_bottom_right[1] = mid_y + mid_y * vertical_warp
+    else:
+        dst_top_left[1] = mid_y - abs(mid_y * vertical_warp)
+        dst_bottom_left[1] = mid_y + abs(mid_y * vertical_warp)
+
+    if horizontal_warp > 0:
+        dst_top_right[0] = mid_x + mid_x * horizontal_warp
+        dst_top_left[0] = mid_x - mid_x * horizontal_warp
+    else:
+        dst_bottom_right[0] = mid_x + mid_x * abs(horizontal_warp)
+        dst_bottom_left[0] = mid_x - mid_x * abs(horizontal_warp)
+
+    # Convert angles to radians
+    shear_horizontal_radians = np.radians(shear_horizontal_angle)
+    shear_vertical_radians = np.radians(shear_vertical_angle)
+
+    up_pad, down_pad, left_pad, right_pad = 0, 0, 0, 0
+
+    h_pad = abs(int(height * np.tan(shear_horizontal_radians)))
+    v_pad = abs(int(width * np.tan(shear_vertical_radians)))
+
+    if shear_vertical_angle > 0:
+        up_pad = v_pad
+        dst_top_left[1] += v_pad
+        dst_bottom_left[1] += v_pad
+    else:
+        down_pad = v_pad
+        dst_top_right[1] += v_pad
+        dst_bottom_right[1] += v_pad
+
+    if shear_horizontal_angle > 0:
+        left_pad = h_pad
+        dst_top_right[0] += h_pad
+        dst_top_left[0] += h_pad
+    else:
+        right_pad = h_pad
+        dst_bottom_right[0] += h_pad
+        dst_bottom_left[0] += h_pad
+
+    image_pil = add_padding(Image.fromarray(image_arr), up=up_pad, down=down_pad, left=left_pad, right=right_pad)
+
+    new_width, new_height = width + h_pad, height + v_pad
+
+    # Define destination points (adjusted for desired warping)
+    points = [dst_top_left, dst_top_right, dst_bottom_right, dst_bottom_left]
+
+    print([np.float32([x, y + 10]) for x, y in points])
+    print(points, '###')
+    # Calculate perspective transform matrix
+    transform_matrix = cv2.getPerspectiveTransform(src_pts, np.array([np.float32([x - 150, y - 150]) for x, y in points]))
+
+    # Warp the image
+    warped_image_arr = cv2.warpPerspective(np.array(image_pil), transform_matrix, (new_width, new_height))
+
+    warped_image_pil = Image.fromarray(warped_image_arr)
+
+    for i, start_point in enumerate(points):
+        if i == len(points) - 1:
+            end_point = points[0]
+        else:
+            end_point = points[i + 1]
+        # print(start_point, end_point)
+        warped_image_pil = draw_line(warped_image_pil, start_point, end_point)
+    return warped_image_pil
+
+
+# Example usage:
+input_image_path = 'images/sign_1.jpg'
+
+my_image = shear_and_warp(input_image_path, 20, 20, 1, 1)
+
+# Display the original and sheared images
+my_image.show()

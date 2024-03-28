@@ -150,7 +150,7 @@ def warp_perspective(_image, vertical_warp, horizontal_warp):
     return _warped_image
 
 
-def draw_line(image, start_point, end_point, line_color=(255, 0, 0), thickness=6):
+def draw_line(image, start_point, end_point, line_color=(0, 0, 255), thickness=2):
     """
     Draw a line on the image.
 
@@ -177,13 +177,13 @@ def shear_and_warp(image_path, shear_horizontal_angle, shear_vertical_angle, ver
     image_arr = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
     height, width = image_arr.shape[:2]
 
-    # Define source points (corners of the input image)
-    src_top_left = [0, 0]
-    src_top_right = [width, 0]
-    src_bottom_right = [width, height]
-    src_bottom_left = [0, height]
-
-    src_pts = np.float32([src_top_left, src_top_right, src_bottom_right, src_bottom_left])
+    # # Define source points (corners of the input image)
+    # src_top_left = [0, 0]
+    # src_top_right = [width, 0]
+    # src_bottom_right = [width, height]
+    # src_bottom_left = [0, height]
+    #
+    # src_pts = np.float32([src_top_left, src_top_right, src_bottom_right, src_bottom_left])
 
     # Define destination points based on warping
     mid_y = height // 2
@@ -236,15 +236,21 @@ def shear_and_warp(image_path, shear_horizontal_angle, shear_vertical_angle, ver
 
     image_pil = add_padding(Image.fromarray(image_arr), up=up_pad, down=down_pad, left=left_pad, right=right_pad)
 
+    # Define source points (corners of the input image)
+    src_top_left = [left_pad, up_pad]
+    src_top_right = [width + left_pad, up_pad]
+    src_bottom_right = [width + left_pad, height + up_pad]
+    src_bottom_left = [left_pad, height + up_pad]
+
+    src_pts = np.float32([src_top_left, src_top_right, src_bottom_right, src_bottom_left])
+
     new_width, new_height = width + h_pad, height + v_pad
 
     # Define destination points (adjusted for desired warping)
     points = [dst_top_left, dst_top_right, dst_bottom_right, dst_bottom_left]
 
-    print([np.float32([x, y + 10]) for x, y in points])
-    print(points, '###')
     # Calculate perspective transform matrix
-    transform_matrix = cv2.getPerspectiveTransform(src_pts, np.array([np.float32([x - 150, y - 150]) for x, y in points]))
+    transform_matrix = cv2.getPerspectiveTransform(src_pts, np.array([np.float32([x, y]) for x, y in points]))
 
     # Warp the image
     warped_image_arr = cv2.warpPerspective(np.array(image_pil), transform_matrix, (new_width, new_height))
@@ -262,7 +268,7 @@ def shear_and_warp(image_path, shear_horizontal_angle, shear_vertical_angle, ver
 
 
 # Example usage:
-input_image_path = 'images/sign_1.jpg'
+input_image_path = 'images/image 1.jpg'
 
 my_image = shear_and_warp(input_image_path, 20, 20, 1, 1)
 

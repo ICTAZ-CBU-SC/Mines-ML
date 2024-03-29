@@ -1,4 +1,4 @@
 train: C:\Users\Bulaya\PycharmProjects\Mines-ML\generated_dataset\images\train 
 val: C:\Users\Bulaya\PycharmProjects\Mines-ML\generated_dataset\images\val 
-nc: 1 
-names: ['sign']
+nc: 5 
+names: ['active_mine', 'blasting_sign', 'hard_hat_area', 'restricted area', 'explosives']

@@ -11,18 +11,15 @@ def crop_image(image_pil, new_width, new_height):
     return cropped_image
 
 
-def adjust_brightness(image_path, output_path, factor):
-    # Open the image
-    image = Image.open(image_path)
-
+def adjust_brightness(image_pil, factor):
     # Create an ImageEnhance object
-    enhancer = ImageEnhance.Brightness(image)
+    enhancer = ImageEnhance.Brightness(image_pil)
 
     # Adjust the brightness
     enhanced_image = enhancer.enhance(factor)
 
     # Save the adjusted image
-    enhanced_image.save(output_path)
+    return enhanced_image
 
 
 def add_padding(image_pil, up=0, down=0, left=0, right=0):
@@ -91,11 +88,8 @@ def overlay_images(_background_image, _overlay_image, x=0.0, y=0.0, seg_points=N
     return result, new_seg_points
 
 
-# Example usage:
-background_image = Image.open("MINING SAFETY SET/BACKGROUND/miners-working-safe-in-coppermine_How-miners-work-safely.jpg")
-overlay_image = Image.open("generated_dataset/images/train/1.png")
-output_path = 'result.png'
+if __name__ == "__main__":
+    test_image = Image.open("images/image 2.jpg")
+    adjusted = adjust_brightness(test_image, 0.7)
+    adjusted.show()
 
-result_image, seg = overlay_images(background_image, overlay_image, 0.5, 0.5, seg_points=[(0.5, 0.5)])
-print(seg)
-result_image.show()

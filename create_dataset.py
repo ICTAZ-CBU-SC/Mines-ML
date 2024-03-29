@@ -177,14 +177,6 @@ def shear_and_warp(image_path, shear_horizontal_angle, shear_vertical_angle, ver
     image_arr = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
     height, width = image_arr.shape[:2]
 
-    # # Define source points (corners of the input image)
-    # src_top_left = [0, 0]
-    # src_top_right = [width, 0]
-    # src_bottom_right = [width, height]
-    # src_bottom_left = [0, height]
-    #
-    # src_pts = np.float32([src_top_left, src_top_right, src_bottom_right, src_bottom_left])
-
     # Define destination points based on warping
     mid_y = height // 2
     mid_x = width // 2
@@ -257,20 +249,19 @@ def shear_and_warp(image_path, shear_horizontal_angle, shear_vertical_angle, ver
 
     warped_image_pil = Image.fromarray(warped_image_arr)
 
-    for i, start_point in enumerate(points):
-        if i == len(points) - 1:
-            end_point = points[0]
-        else:
-            end_point = points[i + 1]
-        # print(start_point, end_point)
-        warped_image_pil = draw_line(warped_image_pil, start_point, end_point)
-    return warped_image_pil
+    # for i, start_point in enumerate(points):
+    #     if i == len(points) - 1:
+    #         end_point = points[0]
+    #     else:
+    #         end_point = points[i + 1]
+    #     warped_image_pil = draw_line(warped_image_pil, start_point, end_point)
+    return warped_image_pil, points
 
 
 # Example usage:
 input_image_path = 'images/image 1.jpg'
 
-my_image = shear_and_warp(input_image_path, 20, 20, 1, 1)
+my_image, seg = shear_and_warp(input_image_path, -20, -20, 0.9, 1)
 
 # Display the original and sheared images
 my_image.show()

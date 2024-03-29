@@ -1,8 +1,6 @@
 import os.path
-import random
-from random import uniform
-from secrets import choice
-
+from random import uniform, choice
+# from secrets import choice
 import cv2
 import numpy as np
 from PIL import Image
@@ -190,13 +188,13 @@ def create_dataset(dataset_dir, instances_dir, background_dir, samples=100, trai
             text_file.write("")
 
     with open("data.yaml", "w") as yaml_file:
-        data = f"train: {os.path.abspath(os.path.join(dataset_dir, 'train'))} \n" \
-               f"val: {os.path.abspath(os.path.join(dataset_dir, 'val'))} \n" \
+        data = f"train: {os.path.abspath(os.path.join(dataset_dir, 'images', 'train'))} \n" \
+               f"val: {os.path.abspath(os.path.join(dataset_dir, 'images', 'val'))} \n" \
                f"nc: 1 \nnames: ['sign']"
         yaml_file.write(data)
 
 
-create_dataset("generated_dataset", "MINING SAFETY SET/ACTIVE MINE", "MINING SAFETY SET/BACKGROUND", samples=2000)
+create_dataset("generated_dataset", "MINING SAFETY SET/ACTIVE MINE", "MINING SAFETY SET/BACKGROUND", samples=600)
 
 # dataset_dir = "Warning Signs Dataset"
 # instances_dir = "MINING SAFETY SET/ACTIVE MINE"

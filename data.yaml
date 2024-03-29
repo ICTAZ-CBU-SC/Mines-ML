@@ -1,4 +1,4 @@
-train: C:\Users\Bulaya\PycharmProjects\Mines-ML\generated_dataset\train
-val: C:\Users\Bulaya\PycharmProjects\Mines-ML\generated_dataset\val
+train: C:\Users\Bulaya\PycharmProjects\Mines-ML\generated_dataset\images\train 
+val: C:\Users\Bulaya\PycharmProjects\Mines-ML\generated_dataset\images\val 
 nc: 1 
 names: ['sign']

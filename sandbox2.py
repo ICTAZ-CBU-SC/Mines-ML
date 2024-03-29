@@ -1,27 +1,18 @@
-from PIL import Image
+from ultralytics import YOLO
 
+# Load a model
+# model = YOLO('train11-03-24 06_03/weights/best.pt')
+model = YOLO('best (1).pt')  # pretrained YOLOv8n model
 
-def overlay_image(background_image, overlay_image, x, y):
-    # Open both images
-    background = Image.open(background_image)
-    overlay = Image.open(overlay_image)
+# Run batched inference on a list of images
+results = model.predict('test_images')  # return a list of Results objects
 
-    # Convert overlay image to RGBA mode if not already
-    if overlay.mode != 'RGBA':
-        overlay = overlay.convert('RGBA')
-
-    # Paste the overlay image onto the background at specified coordinates
-    background.paste(overlay, (x, y), overlay)
-
-    # Return the resulting image
-    return background
-
-
-# Example usage:
-background_image = Image.open('MINING SAFETY SET/BACKGROUND/Underground-mine-ramp.jpg)')
-overlay_image = warp_persp'overlay.png'
-x_coordinate = 100
-y_coordinate = 50
-
-result_image = overlay_image(background_image_path, overlay_image_path, x_coordinate, y_coordinate)
-result_image.show()  # Display the result
+# model(0)
+# Process results list
+for i, result in enumerate(results):
+    boxes = result.boxes  # Boxes object for bounding box outputs
+    masks = result.masks  # Masks object for segmentation masks outputs
+    keypoints = result.keypoints  # Keypoints object for pose outputs
+    probs = result.probs  # Probs object for classification outputs
+    # result.show()  # display to screen
+    result.save(filename=f'results/result{i}.jpg')  # save to disk

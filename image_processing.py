@@ -4,6 +4,16 @@ from PIL import Image, ImageEnhance
 
 
 def overlay_images(_background_image, _overlay_image, x=0.0, y=0.0, seg_points=None):
+    """
+    Places an image on top of the other. Raise error of overlay image is larger
+    than background either by width or height.
+    :param _background_image: Background image.
+    :param _overlay_image: Image to overlay.
+    :param x: Horizontal offset ratio. Must be in [0, 1].
+    :param y: Vertical offset ratio. Must be in [0, 1].
+    :param seg_points: Segmentation points of the overlay image. Now ones will be returned if provided.
+    :return: New image, and new segmentation points.
+    """
     unedited_overlay = _overlay_image.copy()
 
     # If background image doesn't have an alpha channel, convert it to RGBA
@@ -30,8 +40,6 @@ def overlay_images(_background_image, _overlay_image, x=0.0, y=0.0, seg_points=N
     new_seg_points = []
     if seg_points is not None:
         for x, y in seg_points:
-            # abs_x = x * unedited_overlay.width + x_offset
-            # abs_x = y * unedited_overlay.height + y_offset
             new_x = (x * unedited_overlay.width + x_offset) / _background_image.width
             new_y = (y * unedited_overlay.height + y_offset) / _background_image.height
             new_seg_points.append((new_x, new_y))
@@ -70,8 +78,17 @@ def add_padding(image, up=0, down=0, left=0, right=0):
 
 
 def shear_and_warp(image_path, shear_horizontal_angle, shear_vertical_angle, vertical_warp, horizontal_warp):
-    # image_arr = cv2.imread(image_path)
-    # image_arr = cv2.cvtColor(image_arr, cv2.COLOR_BGR2RGBA)
+    """
+    Distort an image using the specified parameters
+
+    :param image_path: Path to the image
+    :param shear_horizontal_angle: Angle of horizontal shear. Make it negative for opposite effect.
+    :param shear_vertical_angle: Angle of vertical shear. Make it negative for opposite effect.
+    :param vertical_warp: Ratio of vertical warp. Must be <= 1. Make it negative for opposite effect.
+    :param horizontal_warp: Ratio of horizontal warp. Must be <= 1. Make it negative for opposite effect.
+    :return: Modified image.
+    """
+
     image_arr = np.array(Image.open(image_path).convert("RGBA"))
     height, width = image_arr.shape[:2]
 
@@ -144,16 +161,7 @@ def shear_and_warp(image_path, shear_horizontal_angle, shear_vertical_angle, ver
 
     # Warp the image
     warped_image_arr = cv2.warpPerspective(np.array(image_pil), transform_matrix, (new_width, new_height))
-
     warped_image_pil = Image.fromarray(warped_image_arr)
-
-    # for i, start_point in enumerate(points):
-    #     if i == len(points) - 1:
-    #         end_point = points[0]
-    #     else:
-    #         end_point = points[i + 1]
-    #     warped_image_pil = draw_line(warped_image_pil, start_point, end_point)
-
     segmentation_points = [[x / new_width, y / new_height] for x, y in points]
     return warped_image_pil, segmentation_points
 
@@ -171,17 +179,9 @@ def scale_image(image_pil, scale_factor):
     return scaled_image
 
 
-def crop_image(image_pil, new_width, new_height):
-    # Open the image
-
-    # Crop the image
-    cropped_image = image_pil.crop((new_width, 0, 0, new_height))
-
-    # Save the cropped image
-    return cropped_image
-
-
 def adjust_brightness(image_pil, factor):
+    """Adjust the brightness of the image"""
+
     # Create an ImageEnhance object
     enhancer = ImageEnhance.Brightness(image_pil)
 
@@ -193,9 +193,4 @@ def adjust_brightness(image_pil, factor):
 
 
 if __name__ == "__main__":
-    # Example usage:
-    input_path = 'input_image.jpg'
-    output_path = 'scaled_image.jpg'
-    scale_factor = 0.5  # Scale factor (0.5 means halving the dimensions)
-
-    scale_image(input_path, output_path, scale_factor)
+    pass

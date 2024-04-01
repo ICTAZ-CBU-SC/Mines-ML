@@ -106,8 +106,5 @@ def create_dataset(dataset_dir, instances_dir, background_dir, samples=100, trai
 
 
 create_dataset("generated_dataset", "dataset generation inputs/instances", "dataset generation inputs/background",
-               samples=20, train_val_split=0.80)
+               samples=1000, train_val_split=0.80)
 
-# dataset_dir = "Warning Signs Dataset"
-# instances_dir = "MINING SAFETY SET/ACTIVE MINE"
-# background_dir = "MINING SAFETY SET/BACKGROUND"

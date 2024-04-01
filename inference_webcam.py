@@ -7,8 +7,8 @@ from ultralytics.utils.plotting import Annotator  # ultralytics.yolo.utils.plott
 # model = YOLO(os.path.join("runs/segment", sorted(os.listdir("runs/segment"))[-1], "weights", "last.pt"))
 # model = YOLO("Epochs segmentation/train31-03-24 0835/weights/last.pt")
 # model = YOLO("Epochs/train-segment31-03-24 1322/weights/last.pt")
-model = YOLO("Epochs/train-segment31-03-24 1648/weights/last.pt")
-
+# model = YOLO("Epochs/train-segment31-03-24 1648/weights/last.pt")
+model = YOLO("models/model-v3.pt")
 # results = model.val()
 # print(results)
 # input("Press enter to continue")
@@ -37,7 +37,7 @@ while True:
             x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
 
             # cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), thickness=2)
-            annotator.box_label(b, f"{model.names[class_index]} {confidence}")
+            annotator.box_label(b, f"{model.names[class_index]} {confidence:.2f}")
             # print(model.names[int(class_index)])
 
     # frame = annotator.result()
